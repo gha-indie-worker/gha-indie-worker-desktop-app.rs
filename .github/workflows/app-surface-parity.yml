@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          readonly validator_sha='5b441294b6732525cac375bedba528a5a380027f'
+          readonly validator_sha='9d362edcdb0ca4aa0f2779258fa05128124c7f35'
           readonly validator_url="https://raw.githubusercontent.com/22-factor-apps/22-factor-apps-audit/${validator_sha}/tools/app_surface_parity.py"
           curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location \
             "$validator_url" --output /tmp/app_surface_parity.py
