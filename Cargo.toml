@@ -22,3 +22,6 @@ serde_json = "1"
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[lints.clippy]
+needless_return = "allow"
