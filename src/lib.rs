@@ -2,7 +2,7 @@
 
 pub mod app;
 pub mod config;
+pub mod daemon;
 pub mod net;
 pub mod state;
 pub mod ui;
-
