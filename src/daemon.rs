@@ -4,7 +4,7 @@ use std::{fs, path::Path};
 
 use reqwest::blocking::Client;
 use serde::Deserialize;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 const SUPPORTED_PROTOCOL_VERSION: u32 = 1;
 
@@ -125,10 +125,7 @@ impl DaemonClient {
     }
 
     pub fn set_keep_awake(&self, enabled: bool) -> Result<Value, DaemonClientError> {
-        return self.post_json(
-            "/v1/power/keep-awake",
-            Some(json!({"enabled": enabled})),
-        );
+        return self.post_json("/v1/power/keep-awake", Some(json!({"enabled": enabled})));
     }
 
     pub fn apply_update(&self) -> Result<Value, DaemonClientError> {
@@ -142,7 +139,9 @@ impl DaemonClient {
             .get(&url)
             .bearer_auth(&self.token)
             .send()
-            .map_err(|error| DaemonClientError::Http(format!("daemon GET {url} failed: {error}")))?;
+            .map_err(|error| {
+                DaemonClientError::Http(format!("daemon GET {url} failed: {error}"))
+            })?;
         return parse_response(response, &url);
     }
 
@@ -152,9 +151,9 @@ impl DaemonClient {
         if let Some(body) = body {
             request = request.json(&body);
         }
-        let response = request
-            .send()
-            .map_err(|error| DaemonClientError::Http(format!("daemon POST {url} failed: {error}")))?;
+        let response = request.send().map_err(|error| {
+            DaemonClientError::Http(format!("daemon POST {url} failed: {error}"))
+        })?;
         return parse_response(response, &url);
     }
 }

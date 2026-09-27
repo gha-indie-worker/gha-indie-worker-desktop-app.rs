@@ -7,7 +7,8 @@ use crate::{
 };
 
 pub fn probe(config: &DesktopConfig) -> DesktopState {
-    let client = match DaemonClient::from_token_file(&config.daemon_base, &config.daemon_token_file) {
+    let client = match DaemonClient::from_token_file(&config.daemon_base, &config.daemon_token_file)
+    {
         Ok(client) => client,
         Err(error) => {
             return DesktopState {

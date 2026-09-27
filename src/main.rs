@@ -6,4 +6,3 @@ fn main() {
     let cfg = DesktopConfig::from_env();
     DesktopApp::new(cfg).run();
 }
-
