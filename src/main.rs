@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 use anyhow::{Context as _, Result, anyhow, bail};
 use serde_json::Value;
@@ -18,6 +18,8 @@ const MAX_TOKEN_FILE_BYTES: u64 = 16 * 1024;
 const MAX_TOKEN_BYTES: usize = 4096;
 
 slint::slint! {
+    import { Button } from "std-widgets.slint";
+
     export component DesktopApp inherits Window {
         in property <string> status_text;
         callback refresh();
