@@ -50,8 +50,8 @@ slint::slint! {
 }
 
 fn main() -> Result<()> {
-    let daemon_url = env::var("GIW_DESKTOP_DAEMON_URL")
-        .unwrap_or_else(|_| DEFAULT_DAEMON_URL.to_owned());
+    let daemon_url =
+        env::var("GIW_DESKTOP_DAEMON_URL").unwrap_or_else(|_| DEFAULT_DAEMON_URL.to_owned());
     let daemon_url = validate_daemon_url(&daemon_url)?;
     let token = read_token()?;
     let client = reqwest::blocking::Client::builder()

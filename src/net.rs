@@ -8,4 +8,3 @@ pub fn probe(endpoint: &str) -> DesktopState {
         endpoint: endpoint.to_string(),
     }
 }
-
