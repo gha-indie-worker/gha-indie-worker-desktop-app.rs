@@ -25,3 +25,6 @@ slint = { version = "1", default-features = false, features = ["backend-winit", 
 
 [lints.rust]
 unsafe_code = "forbid"
+
+[lints.clippy]
+needless_return = "allow"
