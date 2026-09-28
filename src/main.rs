@@ -18,6 +18,8 @@ const MAX_TOKEN_FILE_BYTES: u64 = 16 * 1024;
 const MAX_TOKEN_BYTES: usize = 4096;
 
 slint::slint! {
+    import { Button } from "std-widgets.slint";
+
     export component DesktopApp inherits Window {
         in property <string> status_text;
         callback refresh();
