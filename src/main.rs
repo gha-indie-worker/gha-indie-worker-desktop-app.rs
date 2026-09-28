@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 use anyhow::{Context as _, Result, anyhow, bail};
 use serde_json::Value;
