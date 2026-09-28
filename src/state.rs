@@ -5,4 +5,3 @@ pub struct DesktopState {
     pub connected: bool,
     pub endpoint: String,
 }
-

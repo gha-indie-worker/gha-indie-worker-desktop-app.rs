@@ -18,4 +18,3 @@ impl DesktopApp {
         print!("{}", ui::render(&state));
     }
 }
-

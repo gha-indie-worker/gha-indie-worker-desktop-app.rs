@@ -6,8 +6,6 @@ use crate::state::DesktopState;
 pub fn render(state: &DesktopState) -> String {
     format!(
         "GHA Indie Worker desktop\nendpoint={}\nconnected={}\n",
-        state.endpoint,
-        state.connected
+        state.endpoint, state.connected
     )
 }
-
