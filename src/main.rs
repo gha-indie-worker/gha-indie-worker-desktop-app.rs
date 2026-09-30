@@ -45,7 +45,7 @@ slint::slint! {
                     }
                     Text {
                         text: "Read-only visibility into the canonical desktop execution chain";
-                        color: #8ea4bd;
+                        color: #a8b8c8;
                         font-size: 15px;
                     }
                 }
@@ -69,7 +69,7 @@ slint::slint! {
                     VerticalLayout {
                         padding: 16px;
                         spacing: 6px;
-                        Text { text: "Product owner"; color: #8ea4bd; font-size: 13px; }
+                        Text { text: "Product owner"; color: #a8b8c8; font-size: 13px; }
                         Text { text: "IndieBuild"; color: #eef6ff; font-size: 18px; font-weight: 600; }
                     }
                 }
@@ -82,7 +82,7 @@ slint::slint! {
                     VerticalLayout {
                         padding: 16px;
                         spacing: 6px;
-                        Text { text: "Execution owner"; color: #8ea4bd; font-size: 13px; }
+                        Text { text: "Execution owner"; color: #a8b8c8; font-size: 13px; }
                         Text { text: "GIW daemon → Scintilla daemon"; color: #eef6ff; font-size: 18px; font-weight: 600; wrap: word-wrap; }
                     }
                 }
@@ -95,7 +95,7 @@ slint::slint! {
                     VerticalLayout {
                         padding: 16px;
                         spacing: 6px;
-                        Text { text: "Control mode"; color: #8ea4bd; font-size: 13px; }
+                        Text { text: "Control mode"; color: #a8b8c8; font-size: 13px; }
                         Text { text: "Read-only status"; color: #eef6ff; font-size: 18px; font-weight: 600; }
                     }
                 }
