@@ -25,27 +25,111 @@ slint::slint! {
         callback refresh();
 
         title: "IndieBuild desktop";
-        width: 760px;
-        height: 500px;
+        width: 900px;
+        height: 640px;
+        background: #07111f;
 
         VerticalLayout {
-            padding: 18px;
-            spacing: 12px;
-            Text { text: "IndieBuild local execution"; font-size: 24px; }
-            Text { text: "IndieBuild owns the product/control experience; this UI talks only to the IndieBuild desktop daemon. The daemon delegates local execution to Scintilla."; wrap: word-wrap; }
-            Button { text: "Refresh local status"; clicked => { root.refresh(); } }
+            padding: 28px;
+            spacing: 18px;
+
+            HorizontalLayout {
+                spacing: 18px;
+                VerticalLayout {
+                    spacing: 5px;
+                    Text {
+                        text: "IndieBuild local execution";
+                        color: #eef6ff;
+                        font-size: 30px;
+                        font-weight: 700;
+                    }
+                    Text {
+                        text: "Read-only visibility into the canonical desktop execution chain";
+                        color: #8ea4bd;
+                        font-size: 15px;
+                    }
+                }
+                Rectangle { horizontal-stretch: 1; }
+                Button {
+                    text: "Refresh status";
+                    clicked => { root.refresh(); }
+                }
+            }
+
+            Rectangle { height: 1px; background: #24364b; }
+
+            HorizontalLayout {
+                spacing: 14px;
+                Rectangle {
+                    height: 104px;
+                    background: #0d1929;
+                    border-radius: 12px;
+                    border-width: 1px;
+                    border-color: #24364b;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 6px;
+                        Text { text: "Product owner"; color: #8ea4bd; font-size: 13px; }
+                        Text { text: "IndieBuild"; color: #eef6ff; font-size: 18px; font-weight: 600; }
+                    }
+                }
+                Rectangle {
+                    height: 104px;
+                    background: #0d1929;
+                    border-radius: 12px;
+                    border-width: 1px;
+                    border-color: #24364b;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 6px;
+                        Text { text: "Execution owner"; color: #8ea4bd; font-size: 13px; }
+                        Text { text: "GIW daemon → Scintilla daemon"; color: #eef6ff; font-size: 18px; font-weight: 600; wrap: word-wrap; }
+                    }
+                }
+                Rectangle {
+                    height: 104px;
+                    background: #0d1929;
+                    border-radius: 12px;
+                    border-width: 1px;
+                    border-color: #24364b;
+                    VerticalLayout {
+                        padding: 16px;
+                        spacing: 6px;
+                        Text { text: "Control mode"; color: #8ea4bd; font-size: 13px; }
+                        Text { text: "Read-only status"; color: #eef6ff; font-size: 18px; font-weight: 600; }
+                    }
+                }
+            }
+
+            Text {
+                text: "Local runtime status";
+                color: #eef6ff;
+                font-size: 19px;
+                font-weight: 600;
+            }
+
             Rectangle {
-                background: #202020;
-                border-radius: 8px;
+                vertical-stretch: 1;
+                background: #0d1929;
+                border-radius: 12px;
+                border-width: 1px;
+                border-color: #24364b;
                 Text {
                     text: root.status_text;
-                    color: #eeeeee;
+                    color: #dce9f7;
                     wrap: word-wrap;
-                    x: 12px;
-                    y: 12px;
-                    width: parent.width - 24px;
-                    height: parent.height - 24px;
+                    x: 18px;
+                    y: 18px;
+                    width: parent.width - 36px;
+                    height: parent.height - 36px;
                 }
+            }
+
+            Text {
+                text: "Safety: credentials and raw daemon diagnostics are never rendered. This client reads canonical /v1/status only; lifecycle and execution remain daemon-owned.";
+                color: #70869f;
+                font-size: 12px;
+                wrap: word-wrap;
             }
         }
     }
@@ -73,11 +157,11 @@ fn main() -> Result<()> {
         let token = refresh_token.clone();
         std::thread::spawn(move || {
             let text = match fetch_status(&client, &daemon_url, &token) {
-                Ok(value) => match serde_json::to_string_pretty(&value) {
-                    Ok(value) => value,
-                    Err(error) => format!("invalid status payload: {error}"),
-                },
-                Err(error) => format!("daemon unavailable: {error}"),
+                Ok(value) => render_status_summary(&value),
+                Err(_) => {
+                    "Local status is unavailable. Start the IndieBuild desktop daemon and try again."
+                        .to_owned()
+                }
             };
             let _ = tx.send(text);
         });
@@ -94,10 +178,72 @@ fn main() -> Result<()> {
     });
 
     app.set_status_text(SharedString::from(
-        "Press Refresh local status. Execution ownership stays in giw-desktop-daemon -> scintilla-desktop-daemon.",
+        "Press Refresh status. Execution ownership stays in giw-desktop-daemon → scintilla-desktop-daemon.",
     ));
     app.run()?;
-    return Ok(());
+    Ok(())
+}
+
+fn render_status_summary(value: &Value) -> String {
+    let Some(object) = value.as_object() else {
+        return "Daemon online · valid status received.".to_owned();
+    };
+
+    let mut fields = Vec::new();
+    for key in [
+        "product",
+        "execution_backend",
+        "isolation",
+        "worker_reuse",
+        "in_flight_dispatches",
+        "max_in_flight_dispatches",
+        "uptime_ms",
+    ] {
+        let Some(value) = object.get(key) else {
+            continue;
+        };
+        let rendered = match value {
+            Value::String(value) => value.clone(),
+            Value::Bool(value) => value.to_string(),
+            Value::Number(value) => value.to_string(),
+            _ => continue,
+        };
+        fields.push(format!("{key}={}", truncate_for_ui(&rendered, 96)));
+    }
+
+    if let Some(scintilla) = object.get("scintilla").and_then(Value::as_object) {
+        for key in ["status", "connected", "healthy", "version"] {
+            let Some(value) = scintilla.get(key) else {
+                continue;
+            };
+            let rendered = match value {
+                Value::String(value) => value.clone(),
+                Value::Bool(value) => value.to_string(),
+                Value::Number(value) => value.to_string(),
+                _ => continue,
+            };
+            fields.push(format!(
+                "scintilla.{key}={}",
+                truncate_for_ui(&rendered, 96)
+            ));
+        }
+    }
+
+    if fields.is_empty() {
+        "Daemon online · valid status received.".to_owned()
+    } else {
+        format!("Daemon online · {}", fields.join(" · "))
+    }
+}
+
+fn truncate_for_ui(value: &str, max_chars: usize) -> String {
+    let mut chars = value.chars();
+    let prefix = chars.by_ref().take(max_chars).collect::<String>();
+    if chars.next().is_some() {
+        format!("{prefix}…")
+    } else {
+        prefix
+    }
 }
 
 fn parse_literal_loopback_host(host: &str) -> Result<IpAddr> {
@@ -111,7 +257,7 @@ fn parse_literal_loopback_host(host: &str) -> Result<IpAddr> {
     if !ip.is_loopback() {
         bail!("GIW_DESKTOP_DAEMON_URL must target a literal loopback address");
     }
-    return Ok(ip);
+    Ok(ip)
 }
 
 fn validate_daemon_url(raw: &str) -> Result<String> {
@@ -135,7 +281,7 @@ fn validate_daemon_url(raw: &str) -> Result<String> {
         .host_str()
         .ok_or_else(|| anyhow!("GIW_DESKTOP_DAEMON_URL must include a host"))?;
     let _ = parse_literal_loopback_host(host)?;
-    return Ok(url.as_str().trim_end_matches('/').to_owned());
+    Ok(url.as_str().trim_end_matches('/').to_owned())
 }
 
 fn fetch_status(
@@ -165,7 +311,7 @@ fn fetch_status(
     if body.len() as u64 > MAX_DAEMON_RESPONSE_BYTES {
         bail!("daemon response exceeds {MAX_DAEMON_RESPONSE_BYTES} bytes");
     }
-    return serde_json::from_slice::<Value>(&body).context("daemon returned invalid JSON");
+    serde_json::from_slice::<Value>(&body).context("daemon returned invalid JSON")
 }
 
 fn read_token() -> Result<String> {
@@ -181,7 +327,7 @@ fn read_token() -> Result<String> {
     if token.len() < 32 || token.len() > MAX_TOKEN_BYTES || token.chars().any(char::is_whitespace) {
         bail!("daemon token is malformed");
     }
-    return Ok(token.to_owned());
+    Ok(token.to_owned())
 }
 
 fn validate_token_file(path: &Path) -> Result<()> {
@@ -200,7 +346,7 @@ fn validate_token_file(path: &Path) -> Result<()> {
             bail!("daemon token file must not be accessible by group or others");
         }
     }
-    return Ok(());
+    Ok(())
 }
 
 fn home_dir() -> Result<PathBuf> {
@@ -217,12 +363,13 @@ fn home_dir() -> Result<PathBuf> {
         value.push(path);
         return Ok(value);
     }
-    return Err(anyhow!("cannot determine user home directory"));
+    Err(anyhow!("cannot determine user home directory"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn daemon_url_requires_literal_loopback_http() {
@@ -238,5 +385,29 @@ mod tests {
     #[test]
     fn default_daemon_port_matches_product_daemon() {
         assert_eq!(DEFAULT_DAEMON_URL, "http://127.0.0.1:8770");
+    }
+
+    #[test]
+    fn status_summary_is_human_readable_and_bounded() {
+        let status = json!({
+            "product": "gha-indie-worker",
+            "execution_backend": "scintilla",
+            "isolation": "worker",
+            "in_flight_dispatches": 2,
+            "max_in_flight_dispatches": 8,
+            "scintilla": {"healthy": true}
+        });
+        let rendered = render_status_summary(&status);
+        assert!(rendered.contains("product=gha-indie-worker"));
+        assert!(rendered.contains("execution_backend=scintilla"));
+        assert!(rendered.contains("scintilla.healthy=true"));
+        assert!(!rendered.contains('{'));
+    }
+
+    #[test]
+    fn truncation_is_unicode_safe() {
+        assert_eq!(truncate_for_ui("abcdef", 6), "abcdef");
+        assert_eq!(truncate_for_ui("abcdefg", 6), "abcdef…");
+        assert_eq!(truncate_for_ui("ééé", 2), "éé…");
     }
 }
